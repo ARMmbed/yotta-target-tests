@@ -13,7 +13,8 @@ var queryHost = "registry.yottabuild.org";
 var queryPath = "keyword[]=mbed-official&query=gcc";
 var querySize = 30;
 
-var resultsTemplate = "./results/{target}.json";
+var resultsFolder = "./results";
+var resultsTemplate = resultsFolder + "/{target}.json";
 var resultLines = 10;
 var targets = [];
 
@@ -125,14 +126,32 @@ function yottaExec(command) {
 	});
 }
 
+function removeFolder(folder) {
+	if (fs.existsSync(folder)) {
+
+		try {
+			var files = fs.readdirSync(folder);
+			if (files.length > 0) {
+				for (var i = 0; i < files.length; i++) {
+					fs.unlinkSync(folder + '/' + files[i]);
+				}
+			}
+		} catch(e) {}
+
+		fs.rmdirSync(folder);
+	}
+}
+
 function saveResults(target, result) {
 	var resultsFile = resultsTemplate.replace("{target}", target);
-	if (fs.existsSync(resultsFile)) fs.unlinkSync(resultsFile);
 	fs.writeFileSync(resultsFile, JSON.stringify(result));
 }
 
 getTargets(() => {
 	console.log("found " + targets.length + " targets matching '" + queryPath + "'");
+
+	removeFolder(resultsFolder);
+	fs.mkdirSync(resultsFolder);
 
 	// Recurse targets using promises
 	targets.reduce((sequence, target) => {

@@ -11,8 +11,8 @@ Use the [example circle yaml](example-circle.yml) to add yotta target builds to 
 
 * Installs the [yotta Docker image](https://hub.docker.com/r/mbed/yotta/) during build
 * npm installs the target test runner app during build
-* Uses runner app to run tests which lists targets from the yotta registry and builds each in turn, saving results to test_results.json
-* Offers test_results.json as an artifact
+* Uses runner app to get targets from the yotta registry and builds each in turn, saving results
+* Offers ```./results/*``` folder as artifacts
 
 ### Development Prerequisites
 
