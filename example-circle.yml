@@ -2,17 +2,17 @@ machine:
   services:
     - docker
   node:
-    version: 5.1.0
+    version: 4.0.0
 
 dependencies:
   post:
     - docker pull mbed/yotta
-    - npm install 
+    - npm install ARMmbed/yotta-target-tests
 
 test:
   override:    
-    - node run_tests.js
+    - node node_modules/yotta-target-tests
 
 general:
   artifacts:
-    - test_results.json
+    - results

@@ -11,6 +11,6 @@
     "url": "git://github.com/ARMmbed/yotta-target-tests.git"
   },
   "engines" : {
-    "node" : ">=5.1.0"
+    "node" : ">=4.0.0"
   }
 }

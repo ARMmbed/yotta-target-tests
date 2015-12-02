@@ -13,7 +13,7 @@ var queryHost = "registry.yottabuild.org";
 var queryPath = "keyword[]=mbed-official&query=gcc";
 var querySize = 30;
 
-var resultsFile = "./test_results.json";
+var resultsTemplate = "./results/{target}.json";
 var resultLines = 10;
 var targets = [];
 
@@ -70,7 +70,7 @@ function buildTarget(target) {
 
 			if (deps) result.deps = deps;
 			if (debug) result.debug = debug;
-			updateResults(result);
+			saveResults(target, result);
 
 			console.log("target " + target + " " + (passed ? "passed" : "failed"));
 			resolve();
@@ -125,22 +125,16 @@ function yottaExec(command) {
 	});
 }
 
-function updateResults(result) {
-	var results = [];
-
-	if (fs.existsSync(resultsFile)) {
-		results = JSON.parse(fs.readFileSync(resultsFile));
-	}
-
-	results.push(result);
-	fs.writeFileSync(resultsFile, JSON.stringify(results));
+function saveResults(target, result) {
+	var resultsFile = resultsTemplate.replace("{target}", target);
+	if (fs.existsSync(resultsFile)) fs.unlinkSync(resultsFile);
+	fs.writeFileSync(resultsFile, JSON.stringify(result));
 }
 
 getTargets(() => {
 	console.log("found " + targets.length + " targets matching '" + queryPath + "'");
 
-	if (fs.existsSync(resultsFile)) fs.unlinkSync(resultsFile);
-
+	// Recurse targets using promises
 	targets.reduce((sequence, target) => {
 		return sequence.then(() => {
 			return buildTarget(target);
