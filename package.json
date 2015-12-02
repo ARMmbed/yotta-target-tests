@@ -1,0 +1,16 @@
+{
+  "name": "yotta-target-tests",
+  "version": "0.0.1",
+  "description": "Tests to check each mbed-official gcc yotta target can build a project",
+  "homepage": "https://github.com/ARMmbed/yotta-target-tests",
+  "author": "Rob Moran <rob@thegecko.org>",
+  "license": "Apache-2.0",
+  "main": "./index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ARMmbed/yotta-target-tests.git"
+  },
+  "engines" : {
+    "node" : ">=5.1.0"
+  }
+}

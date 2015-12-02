@@ -1,0 +1,18 @@
+machine:
+  services:
+    - docker
+  node:
+    version: 5.1.0
+
+dependencies:
+  post:
+    - docker pull mbed/yotta
+    - npm install 
+
+test:
+  override:    
+    - node run_tests.js
+
+general:
+  artifacts:
+    - test_results.json
