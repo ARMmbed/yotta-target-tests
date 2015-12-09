@@ -7,7 +7,8 @@ var readline = require('readline');
 
 // Variables
 var projectPath = path.resolve(process.cwd(), process.argv[2] || "./");
-var yottaCommand = "run --rm -e MBED_USER_ID=" + process.env.CIRCLE_USERNAME + " -v " + projectPath + ":/ytProject -w /ytProject --entrypoint yotta mbed/yotta";
+var username = process.env.CIRCLE_USERNAME || "target-tests";
+var yottaCommand = "run --rm -e MBED_USER_ID=" + username + " -v " + projectPath + ":/ytProject -w /ytProject --entrypoint yotta mbed/yotta";
 
 var queryHost = "registry.yottabuild.org";
 var queryPath = "keyword[]=mbed-official&query=gcc";
