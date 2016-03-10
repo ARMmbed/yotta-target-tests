@@ -101,6 +101,7 @@ function buildTarget(target) {
 			complete(true, deps);
 		})
 		.catch(lines => {
+			console.log(lines);
 			complete(false, deps, lines.join("\n"));
 		});
 	});
