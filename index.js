@@ -17,6 +17,12 @@ var querySize = 30;
 var resultsFolder = "./results";
 var resultsTemplate = resultsFolder + "/{target}.json";
 var resultLines = 10;
+
+var postHost = "www.mbed.com";
+var postPath = "/api/v1/tests/yotta/test_results/";
+var testType = "https://www.mbed.com/api/v1/tests/yotta/test_types/blinky_build/";
+var authToken = process.env.MBED_API_TOKEN;
+
 var targets = [];
 
 function getTargets(completeFn, offset) {
@@ -72,7 +78,9 @@ function buildTarget(target) {
 
 			if (deps) result.deps = deps;
 			if (debug) result.debug = debug;
+
 			saveResults(target, result);
+			postResults(target, result)
 
 			console.log("target " + target + " " + (passed ? "passed" : "failed"));
 			resolve();
@@ -146,6 +154,40 @@ function removeFolder(folder) {
 function saveResults(target, result) {
 	var resultsFile = resultsTemplate.replace("{target}", target);
 	fs.writeFileSync(resultsFile, JSON.stringify(result));
+}
+
+function postResults(target, result) {
+	if (!authToken) {
+		return console.log("no token found for posting");
+	}
+
+	var postData = JSON.stringify({
+		test_type: testType,
+		taxonomy_id: target,
+		result: result.passed
+	});
+
+	var postOptions = {
+		host: postHost,
+		path: postPath,
+		method: "POST",
+		headers: {
+			"Authorization": "Token " + authToken,
+			"Content-Type": "application/json",
+			"Content-Length": Buffer.byteLength(postData)
+		}
+	};
+
+	var request = https.request(postOptions, res => {
+		console.log("post status: ", res.statusCode);
+		res.setEncoding('utf8');
+		res.on('data', function(chunk) {
+			console.log('Response: ' + chunk);
+		});
+	});
+
+	request.write(postData);
+	request.end();
 }
 
 getTargets(() => {
