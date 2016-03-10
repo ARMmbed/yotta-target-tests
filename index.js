@@ -91,7 +91,6 @@ function buildTarget(target) {
 			return yottaExec("list --json", "stdout");
 		})
 		.then(jsonLines => {
-			console.log(jsonLines);
 			deps = JSON.parse(jsonLines.join(""));
 			return yottaExec("clean", "stderr", resultLines);
 		})
@@ -102,7 +101,6 @@ function buildTarget(target) {
 			complete(true, deps);
 		})
 		.catch(lines => {
-			console.log(lines);
 			complete(false, deps, lines.join("\n"));
 		});
 	});
@@ -126,7 +124,6 @@ function yottaExec(command, streamName, maxLines) {
 		});
 
 		function onLine(line) {
-			console.log(line);
 			lines.push(line);
 			if (maxLines) {
 				while (lines.length > maxLines) lines.shift();
@@ -187,7 +184,7 @@ function postResults(target, result, completeFn) {
 		console.log("post status: ", res.statusCode);
 		res.setEncoding('utf8');
 		res.on('data', function(chunk) {
-			console.log('Response: ' + chunk);
+			console.log('response: ' + chunk);
 		});
 		res.on('end', completeFn);
 	});
