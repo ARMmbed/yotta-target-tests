@@ -86,17 +86,17 @@ function buildTarget(target) {
 			});
 		}
 
-		yottaExec("target " + target)
+		yottaExec("target " + target, "stdout")
 		.then(() => {
-			return yottaExec("list --json", true);
+			return yottaExec("list --json", "stdout");
 		})
 		.then(jsonLines => {
 			console.log(jsonLines);
 			deps = JSON.parse(jsonLines.join(""));
-			return yottaExec("clean");
+			return yottaExec("clean", "stderr", resultLines);
 		})
 		.then(() => {
-			return yottaExec("build");
+			return yottaExec("build", "stderr", resultLines);
 		})
 		.then(() => {
 			complete(true, deps);
@@ -108,7 +108,7 @@ function buildTarget(target) {
 	});
 }
 
-function yottaExec(command, allLines) {
+function yottaExec(command, streamName, maxLines) {
 	return new Promise((resolve, reject) => {
 		var args = yottaCommand.split(" ");
 		args = args.concat(command.split(" "));
@@ -116,36 +116,25 @@ function yottaExec(command, allLines) {
 		var yt = spawn("docker", args);
 		var lines = [];
 
-		yt.stdout.on('data', data => {
-			console.log(data.toString());
-		});
-
-		yt.stderr.on('data', data => {
+		yt[streamName].on('data', data => {
 			console.log(data.toString());
 		});
 
 		yt.on("close", code => {
-			if (code === 0) {
-				resolve(lines);
-			} else {
-				reject(lines);
-			}
+			if (code === 0) resolve(lines);
+			else reject(lines);
 		});
 
 		function onLine(line) {
 			console.log(line);
 			lines.push(line);
-			if (!allLines) {
-				while (lines.length > resultLines) lines.shift();
+			if (maxLines) {
+				while (lines.length > maxLines) lines.shift();
 			}
 		}
 
 		readline.createInterface({
-			input: yt.stdout
-		}).on("line", onLine);
-
-		readline.createInterface({
-			input: yt.stderr
+			input: yt[streamName]
 		}).on("line", onLine);
 	});
 }
