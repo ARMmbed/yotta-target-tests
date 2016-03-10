@@ -80,18 +80,18 @@ function buildTarget(target) {
 			if (debug) result.debug = debug;
 
 			saveResults(target, result);
-			postResults(target, result)
-
-			console.log("target " + target + " " + (passed ? "passed" : "failed"));
-			resolve();
+			postResults(target, result, function() {
+				console.log("target " + target + " " + (passed ? "passed" : "failed"));
+				resolve();
+			});
 		}
 
 		yottaExec("target " + target)
 		.then(() => {
-			return yottaExec("list --json");
+			return yottaExec("list --json", true);
 		})
-		.then(data => {
-			deps = JSON.parse(data);
+		.then(jsonLines => {
+			deps = JSON.parse(jsonLines.join(""));
 			return yottaExec("clean");
 		})
 		.then(() => {
@@ -106,7 +106,7 @@ function buildTarget(target) {
 	});
 }
 
-function yottaExec(command) {
+function yottaExec(command, allLines) {
 	return new Promise((resolve, reject) => {
 		var args = yottaCommand.split(" ");
 		args = args.concat(command.split(" "));
@@ -118,6 +118,10 @@ function yottaExec(command) {
 			console.log(data.toString());
 		});
 
+		yt.stderr.on('data', data => {
+			console.log(data.toString());
+		});
+
 		yt.on("close", code => {
 			if (code === 0) {
 				resolve(lines);
@@ -126,12 +130,20 @@ function yottaExec(command) {
 			}
 		});
 
+		function onLine(line) {
+			lines.push(line);
+			if (!allLines) {
+				while (lines.length > resultLines) lines.shift();
+			}
+		}
+
 		readline.createInterface({
 			input: yt.stdout
-		}).on("line", line => {
-			lines.push(line);
-			while (lines.length > resultLines) lines.shift();
-		});
+		}).on("line", onLine);
+
+		readline.createInterface({
+			input: yt.stderr
+		}).on("line", onLine);
 	});
 }
 
@@ -156,7 +168,7 @@ function saveResults(target, result) {
 	fs.writeFileSync(resultsFile, JSON.stringify(result));
 }
 
-function postResults(target, result) {
+function postResults(target, result, completeFn) {
 	if (!authToken) {
 		return console.log("no token found for posting");
 	}
@@ -184,7 +196,10 @@ function postResults(target, result) {
 		res.on('data', function(chunk) {
 			console.log('Response: ' + chunk);
 		});
+		res.on('end', completeFn);
 	});
+
+	console.log("posting", postData);
 
 	request.write(postData);
 	request.end();
