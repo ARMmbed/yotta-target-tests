@@ -91,6 +91,7 @@ function buildTarget(target) {
 			return yottaExec("list --json");
 		})
 		.then(jsonLines => {
+			console.log(jsonLines);
 			deps = JSON.parse(jsonLines.join(""));
 			return yottaExec("clean", "stderr");
 		})
@@ -101,6 +102,7 @@ function buildTarget(target) {
 			complete(true, deps);
 		})
 		.catch(lines => {
+			console.log(lines);
 			complete(false, deps, lines.join("\n"));
 		});
 	});
