@@ -88,49 +88,37 @@ function buildTarget(target) {
 
 		yottaExec("target " + target)
 		.then(() => {
-			return yottaExec("list --json");
+			return yottaExec("list --json", "stdout");
 		})
 		.then(jsonLines => {
-			console.log(jsonLines);
 			deps = JSON.parse(jsonLines.join(""));
-			return yottaExec("clean", "stderr");
+			return yottaExec("clean");
 		})
 		.then(() => {
-			return yottaExec("build", "both", resultLines);
+			return yottaExec("build");
 		})
 		.then(() => {
 			complete(true, deps);
 		})
 		.catch(lines => {
-			console.log(lines);
+			while (lines.length > resultLines) lines.shift();
 			complete(false, deps, lines.join("\n"));
 		});
 	});
 }
 
-function yottaExec(command, streamName, maxLines) {
+function yottaExec(command, streamNames) {
 	return new Promise((resolve, reject) => {
-		streamName = streamName || "stdout";
+		streamNames = streamNames || ["stdout", "stderr"];
+		if (typeof streamNames === "string") {
+			streamNames = [streamNames];
+		}
 
 		var args = yottaCommand.split(" ");
 		args = args.concat(command.split(" "));
 
-		var yt = spawn("docker", args);
 		var lines = [];
-
-		if (streamName === "both") {
-			yt.stdout.on('data', data => {
-				console.log(data.toString());
-			});
-			yt.stderr.on('data', data => {
-				console.log(data.toString());
-			});
-		} else {
-			yt[streamName].on('data', data => {
-				console.log(data.toString());
-			});
-		}
-
+		var yt = spawn("docker", args);
 		yt.on("close", code => {
 			if (code === 0) resolve(lines);
 			else reject(lines);
@@ -138,14 +126,17 @@ function yottaExec(command, streamName, maxLines) {
 
 		function onLine(line) {
 			lines.push(line);
-			if (maxLines) {
-				while (lines.length > maxLines) lines.shift();
-			}
 		}
 
-		readline.createInterface({
-			input: yt[streamName]
-		}).on("line", onLine);
+		streamNames.forEach(streamName => {
+			yt[streamName].on('data', data => {
+				console.log(data.toString());
+			});
+
+			readline.createInterface({
+				input: yt[streamName]
+			}).on("line", onLine);
+		});
 	});
 }
 
