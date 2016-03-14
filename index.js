@@ -86,16 +86,16 @@ function buildTarget(target) {
 			});
 		}
 
-		yottaExec("target " + target, "stdout")
+		yottaExec("target " + target)
 		.then(() => {
-			return yottaExec("list --json", "stdout");
+			return yottaExec("list --json");
 		})
 		.then(jsonLines => {
 			deps = JSON.parse(jsonLines.join(""));
-			return yottaExec("clean", "stderr", resultLines);
+			return yottaExec("clean", "stderr");
 		})
 		.then(() => {
-			return yottaExec("build", "stderr", resultLines);
+			return yottaExec("build", "both", resultLines);
 		})
 		.then(() => {
 			complete(true, deps);
@@ -108,15 +108,26 @@ function buildTarget(target) {
 
 function yottaExec(command, streamName, maxLines) {
 	return new Promise((resolve, reject) => {
+		streamName = streamName || "stdout";
+
 		var args = yottaCommand.split(" ");
 		args = args.concat(command.split(" "));
 
 		var yt = spawn("docker", args);
 		var lines = [];
 
-		yt[streamName].on('data', data => {
-			console.log(data.toString());
-		});
+		if (streamName === "both") {
+			yt.stdout.on('data', data => {
+				console.log(data.toString());
+			});
+			yt.stderr.on('data', data => {
+				console.log(data.toString());
+			});
+		} else {
+			yt[streamName].on('data', data => {
+				console.log(data.toString());
+			});
+		}
 
 		yt.on("close", code => {
 			if (code === 0) resolve(lines);
