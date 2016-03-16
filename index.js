@@ -101,7 +101,6 @@ function buildTarget(target) {
 			complete(true, deps);
 		})
 		.catch(lines => {
-			while (lines.length > resultLines) lines.shift();
 			complete(false, deps, lines.join("\n"));
 		});
 	});
@@ -110,8 +109,11 @@ function buildTarget(target) {
 function yottaExec(command, streamNames) {
 	return new Promise((resolve, reject) => {
 		streamNames = streamNames || ["stdout", "stderr"];
+		var restrictLines = true;
+
 		if (typeof streamNames === "string") {
 			streamNames = [streamNames];
+			restrictLines = false;
 		}
 
 		var args = yottaCommand.split(" ");
@@ -126,6 +128,9 @@ function yottaExec(command, streamNames) {
 
 		function onLine(line) {
 			lines.push(line);
+			if (restrictLines) {
+				while (lines.length > resultLines) lines.shift();
+			}
 		}
 
 		streamNames.forEach(streamName => {
